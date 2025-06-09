@@ -45,20 +45,20 @@
   - [x] Test win/loss state detection
 
 ## Game Controller
-- [ ] Create GameController class
-  - [ ] Implement game state management
-  - [ ] Implement timer functionality
-  - [ ] Implement mine/flag counter
-  - [ ] Implement player action handling
-  - [ ] Implement game restart functionality
-  - [ ] Add high score tracking foundation
-- [ ] Write unit tests for GameController
-  - [ ] Test game initialization
-  - [ ] Test state transitions
-  - [ ] Test timer functions
-  - [ ] Test flag counting
-  - [ ] Test player actions
-  - [ ] Test restart functionality
+- [x] Create GameController class
+  - [x] Implement game state management
+  - [x] Implement timer functionality
+  - [x] Implement mine/flag counter
+  - [x] Implement player action handling
+  - [x] Implement game restart functionality
+  - [x] Add high score tracking foundation
+- [x] Write unit tests for GameController
+  - [x] Test game initialization
+  - [x] Test state transitions
+  - [x] Test timer functions
+  - [x] Test flag counting
+  - [x] Test player actions
+  - [x] Test restart functionality
 
 ## Basic UI Setup
 - [ ] Create main application window
