@@ -18,31 +18,31 @@
   - [x] Add basic usage information
 
 ## Core Game Models
-- [ ] Create Cell class
-  - [ ] Implement properties (is_mine, is_revealed, is_flagged, adjacent_mines, position)
-  - [ ] Implement methods for toggling flags
-  - [ ] Implement methods for revealing cells
-- [ ] Write unit tests for Cell class
-  - [ ] Test cell initialization
-  - [ ] Test property getters/setters
-  - [ ] Test flag toggling behavior
-  - [ ] Test revealing behavior
+- [x] Create Cell class
+  - [x] Implement properties (is_mine, is_revealed, is_flagged, adjacent_mines, position)
+  - [x] Implement methods for toggling flags
+  - [x] Implement methods for revealing cells
+- [x] Write unit tests for Cell class
+  - [x] Test cell initialization
+  - [x] Test property getters/setters
+  - [x] Test flag toggling behavior
+  - [x] Test revealing behavior
 
 ## Game Board Model
-- [ ] Create Board class
-  - [ ] Implement 16x16 grid initialization with Cell objects
-  - [ ] Implement mine placement logic (40 mines, random placement)
-  - [ ] Implement adjacent mine counting
-  - [ ] Implement cell revealing logic
-  - [ ] Implement flood fill algorithm for empty cells
-  - [ ] Add game state checking (won, lost, in progress)
-- [ ] Write unit tests for Board class
-  - [ ] Test board initialization and dimensions
-  - [ ] Test mine placement (correct count, no duplicates)
-  - [ ] Test adjacent mine counting accuracy
-  - [ ] Test revealing single cells
-  - [ ] Test flood fill revealing
-  - [ ] Test win/loss state detection
+- [x] Create Board class
+  - [x] Implement 16x16 grid initialization with Cell objects
+  - [x] Implement mine placement logic (40 mines, random placement)
+  - [x] Implement adjacent mine counting
+  - [x] Implement cell revealing logic
+  - [x] Implement flood fill algorithm for empty cells
+  - [x] Add game state checking (won, lost, in progress)
+- [x] Write unit tests for Board class
+  - [x] Test board initialization and dimensions
+  - [x] Test mine placement (correct count, no duplicates)
+  - [x] Test adjacent mine counting accuracy
+  - [x] Test revealing single cells
+  - [x] Test flood fill revealing
+  - [x] Test win/loss state detection
 
 ## Game Controller
 - [ ] Create GameController class
