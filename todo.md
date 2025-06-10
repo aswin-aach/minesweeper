@@ -93,19 +93,19 @@
   - [x] Test user input handling
 
 ## UI-Logic Integration
-- [ ] Connect GameController with UI
-  - [ ] Implement grid display updates on game state changes
-  - [ ] Implement mine counter updates when flagging
-  - [ ] Implement timer updates
-  - [ ] Implement smiley face changes based on game state
-- [ ] Implement mouse interaction
-  - [ ] Left-click to reveal cells
-  - [ ] Right-click to toggle flags
-  - [ ] Middle-click to reveal adjacent cells (when applicable)
-- [ ] Write integration tests
-  - [ ] Test UI updates after game actions
-  - [ ] Test user interactions affecting game state
-  - [ ] Test game state reflection in UI
+- [x] Connect GameController with UI
+  - [x] Implement grid display updates on game state changes
+  - [x] Implement mine counter updates when flagging
+  - [x] Implement timer updates
+  - [x] Implement smiley face changes based on game state
+- [x] Implement mouse interaction
+  - [x] Left-click to reveal cells
+  - [x] Right-click to toggle flags
+  - [x] Middle-click to reveal adjacent cells (when applicable)
+- [x] Write integration tests
+  - [x] Test UI updates after game actions
+  - [x] Test user interactions affecting game state
+  - [x] Test game state reflection in UI
 
 ## High Score System
 - [ ] Create HighScore class

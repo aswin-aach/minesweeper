@@ -596,15 +596,12 @@ class GameWindow:
                 if self.game_state == self.GAME_IN_PROGRESS and old_state == self.GAME_NEW:
                     # Game just started
                     self._start_timer()
-                    self.status_label.config(text="Game in progress...")
                 elif self.game_state == self.GAME_WON:
                     self.restart_button.config(text="😎")  # Cool face with sunglasses
-                    self.status_label.config(text="Game won! Congratulations!")
                     self._stop_timer()
                     self._reveal_all_mines()  # Show all mines correctly
                 elif self.game_state == self.GAME_LOST:
                     self.restart_button.config(text="😵")  # Dizzy face
-                    self.status_label.config(text="Game over! You hit a mine.")
                     self._stop_timer()
                     self._reveal_all_mines()  # Show all mines
         

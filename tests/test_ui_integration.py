@@ -139,16 +139,18 @@ class TestUIIntegration(unittest.TestCase):
         btn = self.game_window.cell_buttons[5][5]
         btn.state = self.game_window.REVEALED
         
-        # Mock the controller's reveal_cell method
-        self.controller.reveal_cell = MagicMock(return_value=True)
-        
         # Flag one adjacent cell
         self.game_window.cell_buttons[4][4].state = self.game_window.FLAGGED
         
-        # Mock the controller's board and cell to return adjacent_mines=1
-        mock_cell = MagicMock()
-        mock_cell.adjacent_mines = 1
-        self.controller.board.get_cell = MagicMock(return_value=mock_cell)
+        # Mock the controller's chord_reveal method
+        self.controller.chord_reveal = MagicMock(return_value={
+            'game_state': 'in_progress',
+            'revealed_cells': [
+                {'row': 1, 'col': 1, 'is_mine': False, 'adjacent_mines': 1}
+            ],
+            'mines_remaining': 40,
+            'elapsed_time': 0
+        })
         
         # Mock the event
         event = MagicMock()
@@ -157,10 +159,8 @@ class TestUIIntegration(unittest.TestCase):
         # Call the middle click handler
         self.game_window._on_cell_middle_click(event)
         
-        # Verify that the controller's reveal_cell method was called for adjacent cells
-        # Since we flagged one cell and the adjacent_mines count is 1, 
-        # the middle click should reveal the other adjacent cells
-        self.controller.reveal_cell.assert_called()
+        # Verify that the controller's chord_reveal method was called
+        self.controller.chord_reveal.assert_called_once_with(btn.row, btn.col)
     
     def test_restart_button_resets_game(self):
         """Test that clicking the restart button resets the game."""
