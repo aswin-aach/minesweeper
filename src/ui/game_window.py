@@ -29,7 +29,7 @@ class GameWindow:
     GAME_LOST = 'lost'
     
     # Cell size in pixels
-    CELL_SIZE = 25
+    CELL_SIZE = 35
     
     def __init__(self, root=None, controller=None):
         """
@@ -48,6 +48,9 @@ class GameWindow:
         # Store controller reference
         self.controller = controller
         
+        # Set grid size
+        self.grid_size = (16, 16)
+        
         # Set window properties
         self.root.title("Minesweeper")
         self.root.resizable(False, False)
@@ -56,12 +59,15 @@ class GameWindow:
         # Set window size for a 16x16 grid
         # Each cell is approximately 25x25 pixels
         # Add extra space for the top panel and borders
-        window_width = 16 * self.CELL_SIZE + 20  # 16 cells * 25 pixels + padding
-        window_height = 16 * self.CELL_SIZE + 80  # 16 cells * 25 pixels + top panel + padding
+        window_width = self.grid_size[0] * self.CELL_SIZE + 20  # Minimal padding
+        window_height = self.grid_size[1] * self.CELL_SIZE + 80  # Space for top panel
         self.root.geometry(f"{window_width}x{window_height}")
-        
-        # Set grid size
-        self.grid_size = (16, 16)
+        # Center the window on screen
+        screen_width = self.root.winfo_screenwidth()
+        screen_height = self.root.winfo_screenheight()
+        x = (screen_width - window_width) // 2
+        y = (screen_height - window_height) // 2
+        self.root.geometry(f"+{x}+{y}")
         
         # Initialize game state variables
         self.game_state = self.GAME_NEW
@@ -84,7 +90,7 @@ class GameWindow:
         """Create and arrange all UI widgets."""
         # Create top panel frame
         self.top_panel = tk.Frame(self.root, bg='#f0f0f0', height=60)
-        self.top_panel.pack(fill=tk.X, padx=10, pady=10)
+        self.top_panel.pack(fill=tk.X, padx=6, pady=(6, 4))
         
         # Create mine counter (left side)
         self.mine_counter_frame = tk.Frame(self.top_panel, bg='#f0f0f0', width=80, height=40)
@@ -136,15 +142,9 @@ class GameWindow:
         )
         self.timer_label.pack(pady=5)
         
-        # Create game grid frame
-        self.grid_frame = tk.Frame(self.root, bg='#c0c0c0', bd=2, relief=tk.SUNKEN)
-        self.grid_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-        
-        # Create a status bar
-        self.status_bar = tk.Frame(self.root, bg='#f0f0f0', height=20)
-        self.status_bar.pack(fill=tk.X, side=tk.BOTTOM)
-        self.status_label = tk.Label(self.status_bar, text="Ready. Left-click to reveal, right-click to flag.", bd=1, relief=tk.SUNKEN, anchor=tk.W)
-        self.status_label.pack(fill=tk.X)
+        # Create grid frame with Windows-style border
+        self.grid_frame = tk.Frame(self.root, bg='#c0c0c0', bd=3, relief=tk.SUNKEN)
+        self.grid_frame.pack(padx=6, pady=4)
         
         # Create grid cells
         self._create_grid_cells()
@@ -176,10 +176,13 @@ class GameWindow:
                 btn.bind("<Button-3>", self._on_cell_right_click)  # Right click
                 btn.bind("<Button-2>", self._on_cell_middle_click)  # Middle click (wheel)
                 # For macOS and some systems where middle click is emulated with both buttons
-                btn.bind("<Button-1-3>", self._on_cell_middle_click)  # Left+Right click
+                btn.bind("<Double-Button-1>", self._on_cell_middle_click)  # Double click
                 
                 # Position the button in the grid
-                btn.grid(row=row, column=col, padx=0, pady=0)
+                # Configure grid weights to ensure tight packing
+                self.grid_frame.grid_rowconfigure(row, weight=1, minsize=self.CELL_SIZE)
+                self.grid_frame.grid_columnconfigure(col, weight=1, minsize=self.CELL_SIZE)
+                btn.grid(row=row, column=col, sticky='nsew')
                 button_row.append(btn)
             
             self.cell_buttons.append(button_row)
@@ -193,9 +196,7 @@ class GameWindow:
         # Store the last clicked button for testing purposes
         self.last_clicked_button = event
         
-        # Update status
-        self.status_label.config(text=f"Cell clicked: ({row}, {col})")
-        
+
         # Change smiley face to 'pressed' state
         self.restart_button.config(text="😮")
         
@@ -235,9 +236,7 @@ class GameWindow:
         btn = event.widget
         row, col = btn.row, btn.col
         
-        # Update status
-        self.status_label.config(text=f"Cell flagged: ({row}, {col})")
-        
+
         # Only allow flagging if the game is in progress and the cell is not revealed
         if self.game_state in [self.GAME_NEW, self.GAME_IN_PROGRESS] and btn.state != self.REVEALED:
             # Start the game if it's the first action
@@ -272,56 +271,20 @@ class GameWindow:
             self.mine_counter_label.config(text=f"{self.mines_remaining:03d}")
     
     def _on_cell_middle_click(self, event):
-        """Handle middle click on a cell (reveal adjacent cells)."""
+        """Handle middle click on a cell (reveal adjacent cells if correct flags are placed)."""
         # Get the button that was clicked
         btn = event.widget
         row, col = btn.row, btn.col
         
-        # Update status
-        self.status_label.config(text=f"Middle click: ({row}, {col})")
-        
-        # Only allow middle click if the game is in progress and the cell is revealed
-        if self.game_state == self.GAME_IN_PROGRESS and btn.state == self.REVEALED:
-            # Get the cell from the controller
-            if self.controller:
-                cell = self.controller.board.get_cell(row, col)
-                if cell and cell.adjacent_mines > 0:
-                    # Count flagged neighbors
-                    flagged_neighbors = 0
-                    neighbors = []
-                    
-                    # Check all 8 possible neighboring positions
-                    for dr in [-1, 0, 1]:
-                        for dc in [-1, 0, 1]:
-                            # Skip the cell itself
-                            if dr == 0 and dc == 0:
-                                continue
-                            
-                            # Calculate neighbor position
-                            neighbor_row = row + dr
-                            neighbor_col = col + dc
-                            
-                            # Check if the neighbor is within bounds
-                            if 0 <= neighbor_row < self.grid_size[0] and 0 <= neighbor_col < self.grid_size[1]:
-                                neighbor_btn = self.cell_buttons[neighbor_row][neighbor_col]
-                                neighbors.append((neighbor_row, neighbor_col, neighbor_btn))
-                                
-                                if neighbor_btn.state == self.FLAGGED:
-                                    flagged_neighbors += 1
-                    
-                    # If the number of flagged neighbors equals the number of adjacent mines,
-                    # reveal all non-flagged neighbors
-                    if flagged_neighbors == cell.adjacent_mines:
-                        for neighbor_row, neighbor_col, neighbor_btn in neighbors:
-                            if neighbor_btn.state not in [self.REVEALED, self.FLAGGED]:
-                                # Reveal the neighbor cell through the controller
-                                result = self.controller.reveal_cell(neighbor_row, neighbor_col)
-                                if isinstance(result, dict):
-                                    self._update_ui_after_move(result)
+        # Only proceed if the game is in progress and we have a controller
+        if self.game_state == self.GAME_IN_PROGRESS and self.controller:
+            # Try to chord reveal
+            result = self.controller.chord_reveal(row, col)
+            if result:
+                self._update_ui_after_move(result)
     
     def _on_restart_click(self):
         """Handle click on the restart button."""
-        self.status_label.config(text="Game restarted")
         self._restart_game()
         
         # If controller exists, notify it
@@ -539,12 +502,10 @@ class GameWindow:
             # Game won
             self.game_state = self.GAME_WON
             self.restart_button.config(text="😎")  # Cool face with sunglasses
-            self.status_label.config(text="Game won! Congratulations!")
         else:
             # Game lost
             self.game_state = self.GAME_LOST
             self.restart_button.config(text="😵")  # Dizzy face
-            self.status_label.config(text="Game over! You hit a mine.")
         
         # Reveal all mines
         self._reveal_all_mines()
@@ -585,10 +546,19 @@ class GameWindow:
         # Reset UI
         self.mine_counter_label.config(text=f"{self.mines_remaining:03d}")
         self.timer_label.config(text="000")
-        self.restart_button.config(text="😊")  # Normal smiley
-        self.status_label.config(text="Ready. Left-click to reveal, right-click to flag.")
+        self.restart_button.config(text="😊")
         
-        # Reset all cell buttons
+        # Reset all buttons
+        for row in range(self.grid_size[0]):
+            for col in range(self.grid_size[1]):
+                btn = self.cell_buttons[row][col]
+                btn.state = self.UNREVEALED
+                btn.config(text='', bg='#c0c0c0', relief=tk.RAISED)
+        
+        # Reset controller if available
+        if self.controller:
+            self.controller.start_game()
+        # Reset all buttons
         for row in range(self.grid_size[0]):
             for col in range(self.grid_size[1]):
                 btn = self.cell_buttons[row][col]

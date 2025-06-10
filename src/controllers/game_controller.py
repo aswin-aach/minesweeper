@@ -77,6 +77,84 @@ class GameController:
         """
         return self.total_mines - self.flags_placed
     
+    def chord_reveal(self, row, col):
+        """
+        Reveal all adjacent cells when middle-clicking a revealed number if the correct
+        number of flags are placed around it.
+        
+        Args:
+            row (int): The row index
+            col (int): The column index
+            
+        Returns:
+            dict: Information about the revealed cells and game state
+        """
+        if self.game_state != 'in_progress':
+            return None
+            
+        cell = self.board.get_cell(row, col)
+        if not cell or not cell.is_revealed or cell.adjacent_mines == 0:
+            return None
+            
+        # Count flagged neighbors
+        flagged_count = 0
+        neighbors = []
+        
+        # Check all 8 adjacent cells
+        for dr in [-1, 0, 1]:
+            for dc in [-1, 0, 1]:
+                if dr == 0 and dc == 0:
+                    continue
+                    
+                new_row, new_col = row + dr, col + dc
+                if 0 <= new_row < self.board.rows and 0 <= new_col < self.board.cols:
+                    neighbor = self.board.get_cell(new_row, new_col)
+                    if neighbor.is_flagged:
+                        flagged_count += 1
+                    elif not neighbor.is_revealed:
+                        neighbors.append((new_row, new_col))
+        
+        # If flagged neighbors match the number, reveal all unflagged neighbors
+        if flagged_count == cell.adjacent_mines:
+            revealed_cells = []
+            game_over = False
+            won = False
+            
+            for n_row, n_col in neighbors:
+                neighbor = self.board.get_cell(n_row, n_col)
+                if neighbor.is_mine:
+                    # Game over if we reveal a mine
+                    self.game_state = 'lost'
+                    game_over = True
+                    break
+                else:
+                    # Reveal the cell
+                    if self.board.reveal_cell(n_row, n_col):
+                        cell = self.board.get_cell(n_row, n_col)
+                        revealed_cells.append({
+                            'row': n_row,
+                            'col': n_col,
+                            'adjacent_mines': cell.adjacent_mines,
+                            'is_mine': cell.is_mine
+                        })
+            
+            # Check if we've won
+            if not game_over and self.board._check_win_condition():
+                self.game_state = 'won'
+                game_over = True
+                won = True
+            
+            return {
+                'revealed_cells': revealed_cells,
+                'game_state': self.game_state,
+                'game_over': game_over,
+                'won': won,
+                'mines_remaining': self.get_remaining_mines(),
+                'elapsed_time': self.get_elapsed_time()
+            }
+        
+        return None
+
     def reveal_cell(self, row, col):
         """
         Reveal a cell at the specified position.
