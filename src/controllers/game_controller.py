@@ -189,8 +189,9 @@ class GameController:
         if not result:
             return False
         
-        # Track newly revealed cells
+        # Track newly revealed cells and check win condition
         revealed_cells = []
+        won = False
         for r in range(self.board.rows):
             for c in range(self.board.cols):
                 cell = self.board.get_cell(r, c)
@@ -202,11 +203,11 @@ class GameController:
                         'adjacent_mines': cell.adjacent_mines
                     })
         
-        # Update game state based on board state
+        # Check for win/loss
         if self.board.game_state == 'lost':
             self.game_state = 'lost'
             self.elapsed_time = self.get_elapsed_time()
-        elif self.board.game_state == 'won':
+        elif self.board._check_win_condition():
             self.game_state = 'won'
             self.elapsed_time = self.get_elapsed_time()
         

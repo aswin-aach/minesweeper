@@ -148,7 +148,8 @@ class Board:
                     self.reveal_cell(neighbor.position[0], neighbor.position[1])
         
         # Check if the game is won
-        self._check_win_condition()
+        if self._check_win_condition():
+            self.game_state = 'won'
         
         return True
     
@@ -177,16 +178,20 @@ class Board:
         Check if the game has been won.
         
         The game is won when all non-mine cells are revealed.
+        
+        Returns:
+            bool: True if the game is won, False otherwise.
         """
         for row in range(self.rows):
             for col in range(self.cols):
                 cell = self.grid[row][col]
                 # If there's a non-mine cell that's not revealed, the game is not won yet
                 if not cell.is_mine and not cell.is_revealed:
-                    return
+                    return False
         
         # All non-mine cells are revealed, so the game is won
         self.game_state = 'won'
+        return True
     
     def __str__(self):
         """
