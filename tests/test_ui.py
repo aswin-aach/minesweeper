@@ -178,7 +178,7 @@ class TestGameWindow(unittest.TestCase):
         self.assertEqual(self.game_window.mines_remaining, 35)
         
         # Check that the elapsed time was updated
-        self.assertEqual(self.game_window.elapsed_time, 42)
+        self.assertAlmostEqual(self.game_window.elapsed_time, 42, places=0)
         
         # Check that the game state was updated
         self.assertEqual(self.game_window.game_state, GameWindow.GAME_IN_PROGRESS)

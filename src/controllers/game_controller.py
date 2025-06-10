@@ -86,7 +86,7 @@ class GameController:
             col (int): The column index.
             
         Returns:
-            bool: True if the cell was revealed, False otherwise.
+            dict: Information about the revealed cells and game state.
         """
         # Cannot play if game is not in progress
         if self.game_state not in ['new', 'in_progress']:
@@ -96,8 +96,33 @@ class GameController:
         if self.game_state == 'new':
             self.start_game()
         
+        # Track revealed cells before the move
+        revealed_before = set()
+        for r in range(self.board.rows):
+            for c in range(self.board.cols):
+                cell = self.board.get_cell(r, c)
+                if cell and cell.is_revealed:
+                    revealed_before.add((r, c))
+        
         # Reveal the cell
         result = self.board.reveal_cell(row, col)
+        
+        # If the result is False, return early
+        if not result:
+            return False
+        
+        # Track newly revealed cells
+        revealed_cells = []
+        for r in range(self.board.rows):
+            for c in range(self.board.cols):
+                cell = self.board.get_cell(r, c)
+                if cell and cell.is_revealed and (r, c) not in revealed_before:
+                    revealed_cells.append({
+                        'row': r,
+                        'col': c,
+                        'is_mine': cell.is_mine,
+                        'adjacent_mines': cell.adjacent_mines
+                    })
         
         # Update game state based on board state
         if self.board.game_state == 'lost':
@@ -107,7 +132,13 @@ class GameController:
             self.game_state = 'won'
             self.elapsed_time = self.get_elapsed_time()
         
-        return result
+        # Return detailed information
+        return {
+            'game_state': self.game_state,
+            'revealed_cells': revealed_cells,
+            'mines_remaining': self.get_remaining_mines(),
+            'elapsed_time': self.get_elapsed_time()
+        }
     
     def toggle_flag(self, row, col):
         """
@@ -118,7 +149,7 @@ class GameController:
             col (int): The column index.
             
         Returns:
-            bool: True if the flag was toggled, False otherwise.
+            dict: Information about the flagged cell and game state.
         """
         # Cannot play if game is not in progress
         if self.game_state not in ['new', 'in_progress']:
@@ -146,7 +177,21 @@ class GameController:
             else:
                 self.flags_placed += 1
         
-        return result
+        # If the result is False, return early
+        if not result:
+            return False
+        
+        # Return detailed information
+        return {
+            'game_state': self.game_state,
+            'flagged_cell': {
+                'row': row,
+                'col': col,
+                'is_flagged': cell.is_flagged
+            },
+            'mines_remaining': self.get_remaining_mines(),
+            'elapsed_time': self.get_elapsed_time()
+        }
     
     def add_high_score(self, player_name):
         """

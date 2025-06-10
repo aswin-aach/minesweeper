@@ -8,9 +8,61 @@ import tkinter as tk
 from src.models.board import Board
 from src.models.cell import Cell
 from src.controllers.game_controller import GameController
+from src.ui.game_window import GameWindow
 
 
 def main():
+    # Create the root window
+    root = tk.Tk()
+    
+    # Create a game controller
+    game_controller = GameController()
+    
+    # Create the game window with the controller
+    game_window = GameWindow(root, controller=game_controller)
+    
+    # Set up periodic UI updates from controller
+    def update_ui_from_controller():
+        # Get current game state from controller
+        board = game_controller.board
+        
+        # Create cell data for the board state
+        cells = []
+        for row in range(board.rows):
+            cell_row = []
+            for col in range(board.cols):
+                cell = board.get_cell(row, col)
+                cell_data = {
+                    'is_revealed': cell.is_revealed,
+                    'is_flagged': cell.is_flagged,
+                    'is_mine': cell.is_mine,
+                    'adjacent_mines': cell.adjacent_mines
+                }
+                cell_row.append(cell_data)
+            cells.append(cell_row)
+        
+        board_state = {
+            'mines_remaining': game_controller.get_remaining_mines(),
+            'elapsed_time': game_controller.get_elapsed_time(),
+            'game_state': game_controller.game_state,
+            'cells': cells
+        }
+        
+        # Update UI with current state
+        game_window.update_from_controller(board_state)
+        
+        # Schedule the next update
+        root.after(100, update_ui_from_controller)
+    
+    # Start the periodic updates
+    update_ui_from_controller()
+    
+    # Start the main event loop
+    root.mainloop()
+    
+
+def console_demo():
+    """Run a console-based demo of the game controller."""
     # Create a new game controller
     game = GameController()
     
@@ -91,4 +143,8 @@ def print_board(board):
         print()
 
 if __name__ == "__main__":
+    # Run the GUI version
     main()
+    
+    # Uncomment to run the console demo instead
+    # console_demo()

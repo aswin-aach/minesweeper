@@ -164,9 +164,11 @@ class TestGameController(unittest.TestCase):
     
     def test_high_score_tracking(self):
         """Test high score tracking functionality"""
-        # Mock a winning game
-        self.game_controller.start_game()
-        self.game_controller.elapsed_time = 100  # Set a time
+        # Clear existing high scores
+        self.game_controller.high_scores = []
+        
+        # Set up a game with a fixed elapsed time
+        self.game_controller.elapsed_time = 100
         
         # Add a high score
         self.game_controller.add_high_score("Player1")
