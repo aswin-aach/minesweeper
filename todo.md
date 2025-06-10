@@ -61,36 +61,36 @@
   - [x] Test restart functionality
 
 ## Basic UI Setup
-- [ ] Create main application window
-  - [ ] Set window title and icon
-  - [ ] Set fixed window size
-  - [ ] Configure Windows 7 style appearance
-- [ ] Create UI layout framework
-  - [ ] Add top panel frame
-  - [ ] Add game grid frame
+- [x] Create main application window
+  - [x] Set window title and icon
+  - [x] Set fixed window size
+  - [x] Configure Windows 7 style appearance
+- [x] Create UI layout framework
+  - [x] Add top panel frame
+  - [x] Add game grid frame
   - [ ] Add status bar (if applicable)
-- [ ] Write tests for UI initialization
-  - [ ] Test window properties
-  - [ ] Test frame layout
+- [x] Write tests for UI initialization
+  - [x] Test window properties
+  - [x] Test frame layout
 
 ## UI Components
-- [ ] Gather/create game assets
-  - [ ] Cell images (unrevealed, revealed, flagged)
-  - [ ] Number tiles (1-8)
-  - [ ] Mine icon
-  - [ ] Smiley face icons (normal, clicked, won, lost)
-- [ ] Implement top panel
-  - [ ] Create mine counter display
-  - [ ] Create restart button with smiley face
-  - [ ] Create timer display
-- [ ] Implement grid display
-  - [ ] Create 16x16 grid of clickable cells
-  - [ ] Implement cell rendering based on state
-  - [ ] Set up mouse event binding
-- [ ] Write tests for UI components
-  - [ ] Test top panel components
-  - [ ] Test grid rendering
-  - [ ] Test user input handling
+- [x] Gather/create game assets
+  - [x] Cell images (unrevealed, revealed, flagged)
+  - [x] Number tiles (1-8)
+  - [x] Mine icon
+  - [x] Smiley face icons (normal, clicked, won, lost)
+- [x] Implement top panel
+  - [x] Create mine counter display
+  - [x] Create restart button with smiley face
+  - [x] Create timer display
+- [x] Implement grid display
+  - [x] Create 16x16 grid of clickable cells
+  - [x] Implement cell rendering based on state
+  - [x] Set up mouse event binding
+- [x] Write tests for UI components
+  - [x] Test top panel components
+  - [x] Test grid rendering
+  - [x] Test user input handling
 
 ## UI-Logic Integration
 - [ ] Connect GameController with UI
