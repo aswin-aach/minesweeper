@@ -1,6 +1,6 @@
 """High score dialog for displaying and entering high scores."""
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
 from datetime import datetime
 from typing import Callable, Optional
 
@@ -32,16 +32,24 @@ class HighScoreDialog:
         y = (screen_height - window_height) // 2
         self.dialog.geometry(f"{window_width}x{window_height}+{x}+{y}")
         
+        # Create main frame to hold everything
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        
+        # Create tree frame
+        tree_frame = ttk.Frame(main_frame)
+        tree_frame.pack(fill="both", expand=True)
+        
         # Create and configure the treeview
         columns = ("Rank", "Player", "Time", "Date")
-        tree = ttk.Treeview(self.dialog, columns=columns, show="headings")
+        tree = ttk.Treeview(tree_frame, columns=columns, show="headings")
         
         for col in columns:
             tree.heading(col, text=col)
             tree.column(col, width=100)
         
         # Add scrollbar
-        scrollbar = ttk.Scrollbar(self.dialog, orient="vertical", command=tree.yview)
+        scrollbar = ttk.Scrollbar(tree_frame, orient="vertical", command=tree.yview)
         tree.configure(yscrollcommand=scrollbar.set)
         
         # Add high scores to the treeview
@@ -54,13 +62,26 @@ class HighScoreDialog:
                 date
             ))
         
-        # Pack widgets
-        tree.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
+        # Pack tree and scrollbar
+        tree.pack(in_=tree_frame, side="left", fill="both", expand=True)
+        scrollbar.pack(in_=tree_frame, side="right", fill="y")
+        
+        # Button frame at the bottom
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill="x", pady=(10, 0))
+        
+        # Clear button
+        def clear_scores():
+            if tk.messagebox.askyesno("Clear High Scores", "Are you sure you want to clear all high scores? This cannot be undone."):
+                self.high_score_manager.clear_scores()
+                tree.delete(*tree.get_children())  # Clear the treeview
+        
+        clear_btn = ttk.Button(button_frame, text="Clear All", command=clear_scores)
+        clear_btn.pack(side="left", padx=5)
         
         # Close button
-        close_btn = ttk.Button(self.dialog, text="Close", command=self.dialog.destroy)
-        close_btn.pack(pady=10)
+        close_btn = ttk.Button(button_frame, text="Close", command=self.dialog.destroy)
+        close_btn.pack(side="right", padx=5)
         
     def prompt_for_name(self, completion_time: float, callback: Callable[[str], None]):
         """Show dialog to enter name for new high score."""

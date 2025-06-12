@@ -117,14 +117,22 @@ class HighScoreManager:
             print(traceback.format_exc())
     
     def save_scores(self):
-        """Save scores to file."""
+        """Save high scores to file."""
         try:
-            self.scores_file.parent.mkdir(parents=True, exist_ok=True)
+            # Create directory if it doesn't exist
+            self.SCORES_DIR.mkdir(parents=True, exist_ok=True)
+            
+            # Save scores to file
             with open(self.scores_file, 'w') as f:
-                json.dump([score.to_dict() for score in self.scores], f, indent=2)
+                json.dump([score.to_dict() for score in self.scores], f)
         except Exception as e:
             print(f"Error saving high scores: {e}")
             traceback.print_exc()
+            
+    def clear_scores(self):
+        """Clear all high scores."""
+        self.scores = []
+        self.save_scores()
     
     def get_scores(self) -> List[HighScoreEntry]:
         """Get all high scores."""
