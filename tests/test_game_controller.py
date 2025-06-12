@@ -165,10 +165,12 @@ class TestGameController(unittest.TestCase):
     def test_high_score_tracking(self):
         """Test high score tracking functionality"""
         # Clear existing high scores
-        self.game_controller.high_scores = []
+        if self.game_controller.high_score_manager.scores_file.exists():
+            self.game_controller.high_score_manager.scores_file.unlink()
         
         # Set up a game with a fixed elapsed time
         self.game_controller.elapsed_time = 100
+        self.game_controller.game_state = 'won'  # Must be in won state to add score
         
         # Add a high score
         self.game_controller.add_high_score("Player1")

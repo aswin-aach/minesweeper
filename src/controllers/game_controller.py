@@ -1,9 +1,9 @@
 import time
-import json
-import os
+import traceback
 from datetime import datetime
 from src.models.board import Board
-
+from src.models.high_score import HighScoreManager
+import os
 
 class GameController:
     """
@@ -18,7 +18,7 @@ class GameController:
         elapsed_time (int): Time elapsed since the game started (in seconds).
         total_mines (int): Total number of mines on the board.
         flags_placed (int): Number of flags placed by the player.
-        high_scores (list): List of high scores.
+        high_score_manager (HighScoreManager): Manager for high scores.
     """
     
     def __init__(self, rows=16, cols=16, mines=40):
@@ -30,28 +30,64 @@ class GameController:
             cols (int, optional): Number of columns in the board. Defaults to 16.
             mines (int, optional): Number of mines to place. Defaults to 40.
         """
-        self.board = Board(rows, cols)
+        self.board = Board(rows, cols, mines)
         self.game_state = 'new'
         self.start_time = 0
         self.elapsed_time = 0
         self.total_mines = mines
         self.flags_placed = 0
-        self.high_scores = []
-        self.load_high_scores()
+        self.high_score_manager = HighScoreManager()
     
     def start_game(self):
         """Start a new game by placing mines and starting the timer."""
-        self.board.place_mines(self.total_mines)
-        self.game_state = 'in_progress'
-        self.start_time = time.time()
+        if self.game_state == 'new':
+            self.board.place_mines(self.total_mines)
+            self.start_time = time.time()
+            self.game_state = 'in_progress'
+            
+    def debug_reveal_all(self):
+        """Debug function to reveal all non-mine cells."""
+        if self.game_state == 'new':
+            self.start_game()
+        elif self.game_state != 'in_progress':
+            return None
+            
+        revealed_cells = []
+        for row in range(self.board.rows):
+            for col in range(self.board.cols):
+                cell = self.board.grid[row][col]
+                if not cell.is_mine and not cell.is_revealed:
+                    cell.is_revealed = True
+                    revealed_cells.append({
+                        'row': row,
+                        'col': col,
+                        'adjacent_mines': cell.adjacent_mines
+                    })
+        
+        # Update elapsed time before checking win
+        if self.start_time > 0:
+            self.elapsed_time = time.time() - self.start_time
+        
+        # Check if all non-mine cells are revealed
+        if self.board.check_win():
+            self.handle_win()
+        
+        return {
+            'revealed_cells': revealed_cells,
+            'game_state': self.game_state,
+            'mines_remaining': self.get_remaining_mines(),
+            'elapsed_time': self.get_elapsed_time(),
+            'won': self.game_state == 'won'
+        }
     
     def restart_game(self):
         """Restart the game by resetting the board and game state."""
-        self.board = Board(self.board.rows, self.board.cols)
+        self.board = Board(self.board.rows, self.board.cols, self.total_mines)
         self.game_state = 'new'
         self.start_time = 0
         self.elapsed_time = 0
         self.flags_placed = 0
+        self.start_game()
     
     def get_elapsed_time(self):
         """
@@ -143,6 +179,7 @@ class GameController:
                 self.game_state = 'won'
                 game_over = True
                 won = True
+                self.handle_win()
             
             return {
                 'revealed_cells': revealed_cells,
@@ -210,6 +247,7 @@ class GameController:
         elif self.board._check_win_condition():
             self.game_state = 'won'
             self.elapsed_time = self.get_elapsed_time()
+            self.handle_win()
         
         # Return detailed information
         return {
@@ -272,9 +310,14 @@ class GameController:
             'elapsed_time': self.get_elapsed_time()
         }
     
+    def handle_win(self):
+        """Handle game win condition."""
+        self.game_state = 'won'
+        self.elapsed_time = self.get_elapsed_time()
+    
     def add_high_score(self, player_name):
         """
-        Add a high score entry.
+        Add a new high score.
         
         Args:
             player_name (str): Name of the player.
@@ -282,54 +325,18 @@ class GameController:
         Returns:
             bool: True if the score was added, False otherwise.
         """
-        # For testing purposes, we'll allow adding scores regardless of game state
-        # In a real implementation, we'd only add scores for won games
-        # if self.game_state != 'won':
-        #     return False
-        
-        # Create a high score entry
-        score = {
-            'name': player_name,
-            'date': datetime.now().strftime('%Y-%m-%d'),
-            'time': self.elapsed_time
-        }
-        
-        # Add to high scores and sort by time (ascending)
-        self.high_scores.append(score)
-        self.high_scores.sort(key=lambda x: x['time'])
-        
-        # Keep only the top 10 scores
-        if len(self.high_scores) > 10:
-            self.high_scores = self.high_scores[:10]
-        
-        # Save high scores
-        self.save_high_scores()
-        
-        return True
+        if self.game_state == 'won':
+            return self.high_score_manager.add_score(player_name, self.elapsed_time)
+        return False
     
     def get_high_scores(self):
         """
         Get the list of high scores.
         
         Returns:
-            list: List of high score dictionaries.
+            list: List of high score entries.
         """
-        return self.high_scores
+        scores = self.high_score_manager.get_scores()
+        return [{'name': score.player_name, 'time': score.completion_time} for score in scores]
     
-    def save_high_scores(self):
-        """Save high scores to a file."""
-        try:
-            with open('highscores.json', 'w') as f:
-                json.dump(self.high_scores, f)
-        except Exception as e:
-            print(f"Error saving high scores: {e}")
-    
-    def load_high_scores(self):
-        """Load high scores from a file."""
-        try:
-            if os.path.exists('highscores.json'):
-                with open('highscores.json', 'r') as f:
-                    self.high_scores = json.load(f)
-        except Exception as e:
-            print(f"Error loading high scores: {e}")
-            self.high_scores = []
+

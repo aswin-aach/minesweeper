@@ -13,16 +13,18 @@ class Board:
         cols (int): The number of columns in the grid.
     """
     
-    def __init__(self, rows=16, cols=16):
+    def __init__(self, rows=16, cols=16, mines=40):
         """
         Initialize a new game board.
         
         Args:
             rows (int, optional): The number of rows in the grid. Defaults to 16.
             cols (int, optional): The number of columns in the grid. Defaults to 16.
+            mines (int, optional): The number of mines to place. Defaults to 40.
         """
         self.rows = rows
         self.cols = cols
+        self.mines = mines
         self.game_state = 'new'
         
         # Initialize the grid with empty cells
@@ -33,13 +35,26 @@ class Board:
                 row_cells.append(Cell(row, col))
             self.grid.append(row_cells)
     
-    def place_mines(self, num_mines):
+    def place_mines(self, num_mines=None):
         """
         Randomly place mines on the board.
         
         Args:
-            num_mines (int): The number of mines to place.
+            num_mines (int, optional): The number of mines to place. If not provided,
+                                      uses the mines count from initialization.
         """
+        # Use stored mines count if num_mines not provided
+        if num_mines is None:
+            num_mines = self.mines
+            
+        # Clear any existing mines
+        for row in range(self.rows):
+            for col in range(self.cols):
+                self.grid[row][col].is_mine = False
+                self.grid[row][col].adjacent_mines = 0
+                self.grid[row][col].is_revealed = False
+                self.grid[row][col].is_flagged = False
+        
         # Create a list of all possible positions
         all_positions = [(row, col) for row in range(self.rows) for col in range(self.cols)]
         
@@ -84,6 +99,21 @@ class Board:
         if 0 <= row < self.rows and 0 <= col < self.cols:
             return self.grid[row][col]
         return None
+        
+    def check_win(self):
+        """
+        Check if the game has been won.
+        
+        Returns:
+            bool: True if all non-mine cells are revealed, False otherwise.
+        """
+        for row in range(self.rows):
+            for col in range(self.cols):
+                cell = self.grid[row][col]
+                # If a non-mine cell is not revealed, game is not won
+                if not cell.is_mine and not cell.is_revealed:
+                    return False
+        return True
     
     def get_neighbors(self, row, col):
         """

@@ -4,6 +4,7 @@ import os
 import sys
 from PIL import Image, ImageTk
 import time
+from .high_score_dialog import HighScoreDialog
 
 # Add the src directory to the Python path if needed
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
@@ -54,20 +55,11 @@ class GameWindow:
         # Set window properties
         self.root.title("Minesweeper")
         self.root.resizable(False, False)
-        self.root.configure(bg='#f0f0f0')  # Windows 7 background color
         
-        # Set window size for a 16x16 grid
-        # Each cell is approximately 25x25 pixels
-        # Add extra space for the top panel and borders
-        window_width = self.grid_size[0] * self.CELL_SIZE + 20  # Minimal padding
-        window_height = self.grid_size[1] * self.CELL_SIZE + 80  # Space for top panel
+        # Set window size based on grid
+        window_width = self.CELL_SIZE * self.grid_size[0] + 40  # Add padding
+        window_height = self.CELL_SIZE * self.grid_size[1] + 120  # Add space for controls
         self.root.geometry(f"{window_width}x{window_height}")
-        # Center the window on screen
-        screen_width = self.root.winfo_screenwidth()
-        screen_height = self.root.winfo_screenheight()
-        x = (screen_width - window_width) // 2
-        y = (screen_height - window_height) // 2
-        self.root.geometry(f"+{x}+{y}")
         
         # Initialize game state variables
         self.game_state = self.GAME_NEW
@@ -76,75 +68,156 @@ class GameWindow:
         self.timer_running = False
         self.last_time_update = 0
         
-        # Store cell images
-        self.cell_images = {}
+        # Store cell number styles
+        self.cell_images = {
+            '1': {'fg': 'blue', 'bg': '#e0e0e0'},
+            '2': {'fg': 'green', 'bg': '#e0e0e0'},
+            '3': {'fg': 'red', 'bg': '#e0e0e0'},
+            '4': {'fg': 'darkblue', 'bg': '#e0e0e0'},
+            '5': {'fg': 'darkred', 'bg': '#e0e0e0'},
+            '6': {'fg': 'darkcyan', 'bg': '#e0e0e0'},
+            '7': {'fg': 'black', 'bg': '#e0e0e0'},
+            '8': {'fg': 'gray', 'bg': '#e0e0e0'}
+        }
         
         # Create UI components
-        self._create_widgets()
-        self._create_cell_images()
+        self._create_menu_bar()
+        self._create_top_panel()
+        self._create_grid()
+        self._create_status_bar()
+        
+        # Create high score dialog
+        self.high_score_dialog = HighScoreDialog(self.root, self.controller.high_score_manager if self.controller else None)
         
         # Apply Windows 7 style
         self._apply_windows7_style()
     
-    def _create_widgets(self):
-        """Create and arrange all UI widgets."""
+    def _create_menu_bar(self):
+        """Create the menu bar."""
+        # Create menu bar
+        self.menu_bar = tk.Menu(self.root)
+        self.root.config(menu=self.menu_bar)
+        
+        # Create game menu
+        self.game_menu = tk.Menu(self.menu_bar, tearoff=0)
+        self.game_menu.add_command(label="New Game", command=self._restart_game)
+        self.game_menu.add_separator()
+        self.game_menu.add_command(label="High Scores", command=lambda: self.high_score_dialog.show_high_scores())
+        self.game_menu.add_separator()
+        self.game_menu.add_command(label="Debug Win", command=self._debug_reveal_all)
+        self.game_menu.add_separator()
+        self.game_menu.add_command(label="Exit", command=self.root.quit)
+        self.menu_bar.add_cascade(label="Game", menu=self.game_menu)
+        
+        # Create help menu
+        self.help_menu = tk.Menu(self.menu_bar, tearoff=0)
+        self.help_menu.add_command(label="About", command=self._show_about_dialog)
+        self.menu_bar.add_cascade(label="Help", menu=self.help_menu)
+        
+    def _create_grid(self):
+        """Create the grid of cell buttons."""
+        # Create grid frame
+        self.grid_frame = ttk.Frame(self.root)
+        self.grid_frame.pack(padx=10, pady=10)
+        
+        # Create the grid of buttons
+        self.cell_buttons = []
+        for row in range(self.grid_size[0]):
+            button_row = []
+            for col in range(self.grid_size[1]):
+                button = tk.Button(
+                    self.grid_frame,
+                    width=2,
+                    height=1,
+                    relief=tk.RAISED
+                )
+                button.grid(row=row, column=col)
+                button.bind('<Button-1>', lambda e, r=row, c=col: self._on_cell_click(r, c))
+                button.bind('<Button-3>', lambda e, r=row, c=col: self._on_cell_right_click(r, c))
+                button_row.append(button)
+            self.cell_buttons.append(button_row)
+        
+    def _on_cell_click(self, row: int, col: int):
+        """Handle left click on a cell."""
+        if self.controller:
+            self.controller.reveal_cell(row, col)
+    
+    def _on_cell_right_click(self, row: int, col: int):
+        """Handle right click on a cell."""
+        if self.controller:
+            self.controller.toggle_flag(row, col)
+        
+    def _show_about_dialog(self):
+        """Show the about dialog."""
+        tk.messagebox.showinfo(
+            "About Minesweeper",
+            "Minesweeper Clone\nVersion 1.0\n\nA classic Windows-style Minesweeper game\nCreated with Python and Tkinter"
+        )
+    
+    def _create_top_panel(self):
+        """Create the top panel."""
         # Create top panel frame
         self.top_panel = tk.Frame(self.root, bg='#f0f0f0', height=60)
         self.top_panel.pack(fill=tk.X, padx=6, pady=(6, 4))
         
-        # Create mine counter (left side)
-        self.mine_counter_frame = tk.Frame(self.top_panel, bg='#f0f0f0', width=80, height=40)
-        self.mine_counter_frame.pack(side=tk.LEFT, padx=5)
-        
-        # Use a digital-looking font for the counter
-        digital_font = font.Font(family="Courier", size=20, weight="bold")
+        # Create mine counter label
         self.mine_counter_label = tk.Label(
-            self.mine_counter_frame, 
-            text=f"{self.mines_remaining:03d}", 
-            font=digital_font, 
-            bg='black', 
+            self.top_panel,
+            text='040',
+            font=('Digital-7', 24),
             fg='red',
+            bg='black',
             width=3
         )
-        self.mine_counter_label.pack(pady=5)
+        self.mine_counter_label.pack(side=tk.LEFT, padx=10)
         
-        # Create restart button (center)
+        # Create restart button frame
         self.restart_button_frame = tk.Frame(self.top_panel, bg='#f0f0f0')
-        self.restart_button_frame.pack(side=tk.LEFT, expand=True, padx=5)
+        self.restart_button_frame.pack(side=tk.LEFT, expand=True)
         
         # Create restart button with smiley face
         self.restart_button = tk.Button(
-            self.restart_button_frame, 
-            text="😊", 
-            font=("Arial", 16), 
-            width=2, 
+            self.restart_button_frame,
+            text="😊",
+            font=("Arial", 16),
+            width=2,
             height=1,
-            command=self._on_restart_click
+            command=self._restart_game
         )
-        self.restart_button.pack(pady=5)
+        self.restart_button.pack()
+        
+        # Create timer label
+        self.timer_label = tk.Label(
+            self.top_panel,
+            text='000',
+            font=('Digital-7', 24),
+            fg='red',
+            bg='black',
+            width=3
+        )
+        self.timer_label.pack(side=tk.RIGHT, padx=10)
         
         # Bind mouse events to change smiley face
         self.restart_button.bind("<ButtonPress-1>", self._on_restart_button_press)
         self.restart_button.bind("<ButtonRelease-1>", self._on_restart_button_release)
         
-        # Create timer (right side)
-        self.timer_frame = tk.Frame(self.top_panel, bg='#f0f0f0', width=80, height=40)
-        self.timer_frame.pack(side=tk.RIGHT, padx=5)
-        
-        # Use the same digital font for the timer
-        self.timer_label = tk.Label(
-            self.timer_frame, 
-            text="000", 
-            font=digital_font, 
-            bg='black', 
-            fg='red',
-            width=3
-        )
-        self.timer_label.pack(pady=5)
+
         
         # Create grid frame with Windows-style border
         self.grid_frame = tk.Frame(self.root, bg='#c0c0c0', bd=3, relief=tk.SUNKEN)
         self.grid_frame.pack(padx=6, pady=4)
+        
+    def _create_status_bar(self):
+        """Create the status bar."""
+        self.status_bar = tk.Label(
+            self.root,
+            text="Ready",
+            bd=1,
+            relief=tk.SUNKEN,
+            anchor=tk.W,
+            padx=5
+        )
+        self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
         
         # Create grid cells
         self._create_grid_cells()
@@ -473,18 +546,28 @@ class GameWindow:
         """Start the game timer."""
         if not self.timer_running:
             self.timer_running = True
+            self.elapsed_time = 0
             self.last_time_update = time.time()
             self._update_timer()
     
     def _stop_timer(self):
         """Stop the game timer."""
-        self.timer_running = False
+        if self.timer_running:
+            self.timer_running = False
+            # Get final time from controller
+            if self.controller:
+                self.elapsed_time = self.controller.get_elapsed_time()
+                seconds = min(int(self.elapsed_time), 999)
+                self.timer_label.config(text=f"{seconds:03d}")
     
     def _update_timer(self):
         """Update the timer display."""
         if self.timer_running:
             current_time = time.time()
-            self.elapsed_time += current_time - self.last_time_update
+            if self.controller:
+                self.elapsed_time = self.controller.get_elapsed_time()
+            else:
+                self.elapsed_time += current_time - self.last_time_update
             self.last_time_update = current_time
             
             # Update the timer label (cap at 999 seconds)
@@ -492,7 +575,27 @@ class GameWindow:
             self.timer_label.config(text=f"{seconds:03d}")
             
             # Schedule the next update
-            self.root.after(1000, self._update_timer)
+            self.root.after(100, self._update_timer)  # Update more frequently for smoother display
+    
+    def handle_game_over(self, game_state):
+        """Handle game over state (win/loss)."""
+        if game_state == self.GAME_WON:
+            completion_time = self.controller.elapsed_time
+            if self.controller.high_score_manager.qualifies_for_high_score(completion_time):
+                if not self.high_score_dialog:
+                    self.high_score_dialog = HighScoreDialog(self.root, self.controller.high_score_manager)
+                self.high_score_dialog.prompt_for_name(completion_time, self._handle_high_score_entry)
+            else:
+                self.show_message("Congratulations!", f"You won in {completion_time:.1f} seconds!")
+        else:
+            self.show_message("Game Over", "You hit a mine!")
+    
+    def _handle_high_score_entry(self, player_name):
+        """Handle the submission of a high score entry."""
+        self.controller.add_high_score(player_name)
+        if not self.high_score_dialog:
+            self.high_score_dialog = HighScoreDialog(self.root, self.controller.high_score_manager)
+        self.high_score_dialog.show_high_scores()
     
     def _game_over(self, won):
         """Handle game over state."""
@@ -537,44 +640,75 @@ class GameWindow:
     
     def _restart_game(self):
         """Restart the game."""
-        # Reset game state
-        self.game_state = self.GAME_NEW
-        self.mines_remaining = 40
-        self.elapsed_time = 0
-        self._stop_timer()
-        
-        # Reset UI
-        self.mine_counter_label.config(text=f"{self.mines_remaining:03d}")
-        self.timer_label.config(text="000")
-        self.restart_button.config(text="😊")
-        
-        # Reset all buttons
-        for row in range(self.grid_size[0]):
-            for col in range(self.grid_size[1]):
-                btn = self.cell_buttons[row][col]
-                btn.state = self.UNREVEALED
-                btn.config(text='', bg='#c0c0c0', relief=tk.RAISED)
-        
         # Reset controller if available
         if self.controller:
-            self.controller.start_game()
+            self.controller.restart_game()
+            
+        # Reset UI state
+        self.game_state = self.GAME_NEW
+        self.restart_button.config(text="😊")
+        self.timer_label.config(text="000")
+        self.mine_counter_label.config(text="040")
+        self._stop_timer()
+        
         # Reset all buttons
         for row in range(self.grid_size[0]):
             for col in range(self.grid_size[1]):
                 btn = self.cell_buttons[row][col]
-                btn.state = self.UNREVEALED
                 btn.config(
                     text='',
                     bg='#c0c0c0',
                     relief=tk.RAISED,
                     fg='black'  # Reset text color
                 )
+                btn.state = self.UNREVEALED
+                
+    def _debug_reveal_all(self):
+        """Debug function to reveal all non-mine cells."""
+        if self.controller:
+            # Start timer if game is new
+            if self.game_state == self.GAME_NEW:
+                self._start_timer()
+                self.game_state = self.GAME_IN_PROGRESS
+                
+            result = self.controller.debug_reveal_all()
+            if result:
+                # Update UI with revealed cells
+                for cell_data in result['revealed_cells']:
+                    row, col = cell_data['row'], cell_data['col']
+                    btn = self.cell_buttons[row][col]
+                    adj_mines = cell_data['adjacent_mines']
+                    
+                    if adj_mines > 0:
+                        btn.config(
+                            text=str(adj_mines),
+                            bg='#e0e0e0',
+                            relief=tk.SUNKEN,
+                            fg=self.cell_images[str(adj_mines)]['fg']
+                        )
+                    else:
+                        btn.config(text='', bg='#e0e0e0', relief=tk.SUNKEN)
+                    btn.state = self.REVEALED
+                
+                # Update mine counter
+                if 'mines_remaining' in result:
+                    self.mine_counter_label.config(text=f"{result['mines_remaining']:03d}")
+                
+                # Handle win condition
+                if result.get('won', False):
+                    self._game_over(True)
+                    # Check for high score
+                    completion_time = self.controller.get_elapsed_time()
+                    if self.controller.high_score_manager.qualifies_for_high_score(completion_time):
+                        if not self.high_score_dialog:
+                            self.high_score_dialog = HighScoreDialog(self.root, self.controller.high_score_manager)
+                        self.high_score_dialog.prompt_for_name(completion_time, self._handle_high_score_entry)
     
     def update_from_controller(self, board_state):
         """Update UI based on the controller's board state."""
         if not board_state:
             return
-            
+        
         # Update mine counter
         if 'mines_remaining' in board_state:
             self.mines_remaining = board_state['mines_remaining']
@@ -599,63 +733,16 @@ class GameWindow:
                 elif self.game_state == self.GAME_WON:
                     self.restart_button.config(text="😎")  # Cool face with sunglasses
                     self._stop_timer()
-                    self._reveal_all_mines()  # Show all mines correctly
                 elif self.game_state == self.GAME_LOST:
                     self.restart_button.config(text="😵")  # Dizzy face
                     self._stop_timer()
-                    self._reveal_all_mines()  # Show all mines
+                elif self.game_state == self.GAME_NEW:
+                    self.restart_button.config(text="😊")  # Regular smiley
+                    self._stop_timer()
+                    self.timer_label.config(text="000")
         
-        # Update cell states if controller is available
-        if self.controller and not 'cells' in board_state:
-            # If cells weren't provided but we have a controller, get cell data from it
-            for row in range(self.grid_size[0]):
-                for col in range(self.grid_size[1]):
-                    cell = self.controller.board.get_cell(row, col)
-                    btn = self.cell_buttons[row][col]
-                    
-                    if cell.is_revealed:
-                        btn.state = self.REVEALED
-                        
-                        if cell.is_mine:
-                            # Exploded mine
-                            btn.config(
-                                text='💣',
-                                bg='#ff0000',
-                                relief=tk.SUNKEN
-                            )
-                        elif cell.adjacent_mines > 0:
-                            # Number
-                            style = self.cell_images[str(cell.adjacent_mines)]
-                            btn.config(
-                                text=str(cell.adjacent_mines),
-                                fg=style['fg'],
-                                bg=style['bg'],
-                                relief=tk.SUNKEN
-                            )
-                        else:
-                            # Empty cell
-                            btn.config(
-                                text='',
-                                bg='#e0e0e0',
-                                relief=tk.SUNKEN
-                            )
-                    elif cell.is_flagged:
-                        btn.state = self.FLAGGED
-                        btn.config(
-                            text='🚩',
-                            bg='#c0c0c0',
-                            relief=tk.RAISED
-                        )
-                    else:
-                        # Unrevealed cell
-                        btn.state = self.UNREVEALED
-                        btn.config(
-                            text='',
-                            bg='#c0c0c0',
-                            relief=tk.RAISED
-                        )
-        # Update cell states if provided in board_state
-        elif 'cells' in board_state:
+        # Update cell states
+        if 'cells' in board_state:
             for row in range(self.grid_size[0]):
                 for col in range(self.grid_size[1]):
                     cell_state = board_state['cells'][row][col]
@@ -677,7 +764,7 @@ class GameWindow:
                             btn.config(
                                 text=str(cell_state['adjacent_mines']),
                                 fg=style['fg'],
-                                bg=style['bg'],
+                                bg='#e0e0e0',
                                 relief=tk.SUNKEN
                             )
                         else:
@@ -691,6 +778,14 @@ class GameWindow:
                         btn.state = self.FLAGGED
                         btn.config(
                             text='🚩',
+                            bg='#c0c0c0',
+                            relief=tk.RAISED
+                        )
+                    else:
+                        # Unrevealed cell
+                        btn.state = self.UNREVEALED
+                        btn.config(
+                            text='',
                             bg='#c0c0c0',
                             relief=tk.RAISED
                         )
