@@ -32,6 +32,31 @@ pip install -r requirements.txt
 python main.py
 ```
 
+## Building an Executable
+
+You can create a standalone executable that doesn't require Python to be installed:
+
+```bash
+# Make the build script executable (first time only)
+chmod +x build.sh
+
+# Run the build script
+./build.sh
+```
+
+The build script will:
+1. Clean previous build artifacts
+2. Build the executable with PyInstaller
+3. Copy documentation files
+4. Create a platform-specific distribution package
+
+After building, you'll find:
+- The executable at `dist/Minesweeper`
+- A distribution zip file at `dist/minesweeper_<platform>_<architecture>.zip`
+
+Requirements:
+- PyInstaller (`pip install pyinstaller`)
+
 ## Development
 
 This project follows test-driven development principles. To run tests:
