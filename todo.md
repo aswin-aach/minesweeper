@@ -109,20 +109,20 @@
 
 ## High Score System
 - [ ] Create HighScore class
-  - [ ] Add player name, date, and time properties
-  - [ ] Implement comparison for sorting
+  - [x] Add player name, date, and time properties
+  - [x] Implement comparison for sorting
 - [ ] Implement high score persistence
-  - [ ] Add save functionality
-  - [ ] Add load functionality
-  - [ ] Add score sorting
+  - [x] Add save functionality
+  - [x] Add load functionality
+  - [x] Add score sorting
 - [ ] Create high score dialog
-  - [ ] Design dialog UI
-  - [ ] Add player name input
-  - [ ] Display current high scores
+  - [x] Design dialog UI
+  - [x] Add player name input
+  - [x] Display current high scores
 - [ ] Write tests for high score system
-  - [ ] Test score saving/loading
-  - [ ] Test score sorting
-  - [ ] Test dialog functionality
+  - [x] Test score saving/loading
+  - [x] Test score sorting
+  - [x] Test dialog functionality
 
 ## Error Handling and Polish
 - [ ] Implement error handling

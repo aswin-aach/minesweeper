@@ -147,8 +147,8 @@ class TestGameController(unittest.TestCase):
         # Restart the game
         self.game_controller.restart_game()
         
-        # Game state should be 'new'
-        self.assertEqual(self.game_controller.game_state, 'new')
+        # Game state should be 'in_progress' since restart_game immediately starts the game
+        self.assertEqual(self.game_controller.game_state, 'in_progress')
         
         # Timer should be reset
         self.assertEqual(self.game_controller.elapsed_time, 0)
